@@ -295,32 +295,54 @@ function Board () {
     }
     return updated;
   }
-  
+
   //-----------------------------------------
-  function print_subset(indices) {
-    var max_spaces = "                   "; // 19 spaces
-    var line = ""
-    
+  function print_row (indices) {
+    var line123 = "";
+    var line456 = "";
+    var line789 = "";
+
+    // First 1, 2, and 3
     for (var i = 0; i < indices.length; i++) {
-      var temp = "";
       if (_board[indices[i]].value != 0) {
-        temp = "" + _board[indices[i]].value;
+        line123 += "     ";
+        line456 += "  " + _board[indices[i]].value + "  ";
+        line789 += "     ";
       }
       else {
-        temp = "" + JSON.stringify(_board[indices[i]].possibilities)
+        line123 += " ";
+        line123 += (_board[indices[i]].possibilities.indexOf(1) != -1) ? "1" : " ";
+        line123 += (_board[indices[i]].possibilities.indexOf(2) != -1) ? "2" : " ";
+        line123 += (_board[indices[i]].possibilities.indexOf(3) != -1) ? "3" : " ";
+        line123 += " ";
+
+        line456 += " ";
+        line456 += (_board[indices[i]].possibilities.indexOf(4) != -1) ? "4" : " ";
+        line456 += (_board[indices[i]].possibilities.indexOf(5) != -1) ? "5" : " ";
+        line456 += (_board[indices[i]].possibilities.indexOf(6) != -1) ? "6" : " ";
+        line456 += " ";
+
+        line789 += " ";
+        line789 += (_board[indices[i]].possibilities.indexOf(7) != -1) ? "7" : " ";
+        line789 += (_board[indices[i]].possibilities.indexOf(8) != -1) ? "8" : " ";
+        line789 += (_board[indices[i]].possibilities.indexOf(9) != -1) ? "9" : " ";
+        line789 += " ";
       }
-      line += max_spaces.slice(temp.length) + temp + ",";
+      if ((i == 2) || (i == 5)) {
+        line123 += "||";
+        line456 += "||";
+        line789 += "||";
+      }
+      else if (i != indices.length - 1) {
+        line123 += "|";
+        line456 += "|";
+        line789 += "|";
+      }
     }
-    
-    print_to_output (line);
-  }
-  
-  //-----------------------------------------
-  function print_internal () {
-    print_to_output("Printing board");
-    for (var i = 0; i < _row_indices.length; i++) {
-      print_subset(_row_indices[i]);
-    }
+
+    print_to_output (line123);
+    print_to_output (line456);
+    print_to_output (line789);
   }
   
   //-----------------------------------------
@@ -334,6 +356,18 @@ function Board () {
   function print_to_output(text) {
     console.log(text);
     return;
+  }
+
+  //-----------------------------------------
+  function print_internal () {
+    print_to_output ("Printing board (ver 2)");
+
+    for (var i = 0; i < _row_indices.length; i++) {
+      print_row (_row_indices[i]);
+      if (i != _row_indices.length - 1) {
+        print_to_output ("-----+-----+-----++-----+-----+-----++-----+-----+-----");
+      }
+    }
   }
   
   //-----------------------------------------
@@ -360,7 +394,7 @@ function Board () {
   this.solve = function () {
     return solve_internal();
   }
-  
+
   //-----------------------------------------
   this.print = function () {
     return print_internal();
@@ -370,3 +404,8 @@ function Board () {
 //-----------------------------------------
 // Script
 var board1 = new Board();
+
+board1.set(0,0,0,0,0,1,0,2,0,0,0,8,7,0,3,5,0,0,9,0,3,0,0,2,0,0,0,2,0,5,0,0,0,0,0,6,0,0,0,0,7,0,0,0,0,6,0,0,0,0,0,8,0,1,0,0,0,3,0,0,4,0,9,0,0,2,9,0,8,7,0,0,0,4,0,1,0,0,0,0,0)
+board1.print();
+board1.solve();
+board1.print();
