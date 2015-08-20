@@ -305,28 +305,28 @@ function Board () {
     // First 1, 2, and 3
     for (var i = 0; i < indices.length; i++) {
       if (_board[indices[i]].value != 0) {
-        line123 += "     ";
-        line456 += "  " + _board[indices[i]].value + "  ";
-        line789 += "     ";
+        line123 += "       ";
+        line456 += "   " + _board[indices[i]].value + "   ";
+        line789 += "       ";
       }
       else {
-        line123 += " ";
+        line123 += "  ";
         line123 += (_board[indices[i]].possibilities.indexOf(1) != -1) ? "1" : " ";
         line123 += (_board[indices[i]].possibilities.indexOf(2) != -1) ? "2" : " ";
         line123 += (_board[indices[i]].possibilities.indexOf(3) != -1) ? "3" : " ";
-        line123 += " ";
+        line123 += "  ";
 
-        line456 += " ";
+        line456 += "  ";
         line456 += (_board[indices[i]].possibilities.indexOf(4) != -1) ? "4" : " ";
         line456 += (_board[indices[i]].possibilities.indexOf(5) != -1) ? "5" : " ";
         line456 += (_board[indices[i]].possibilities.indexOf(6) != -1) ? "6" : " ";
-        line456 += " ";
+        line456 += "  ";
 
-        line789 += " ";
+        line789 += "  ";
         line789 += (_board[indices[i]].possibilities.indexOf(7) != -1) ? "7" : " ";
         line789 += (_board[indices[i]].possibilities.indexOf(8) != -1) ? "8" : " ";
         line789 += (_board[indices[i]].possibilities.indexOf(9) != -1) ? "9" : " ";
-        line789 += " ";
+        line789 += "  ";
       }
       if ((i == 2) || (i == 5)) {
         line123 += "||";
@@ -365,7 +365,10 @@ function Board () {
     for (var i = 0; i < _row_indices.length; i++) {
       print_row (_row_indices[i]);
       if (i != _row_indices.length - 1) {
-        print_to_output ("-----+-----+-----++-----+-----+-----++-----+-----+-----");
+        print_to_output ("-------+-------+-------++-------+-------+-------++-------+-------+-------"); // Print separator
+      }
+      if ((i == 2) || (i == 5)) {
+        print_to_output ("-------+-------+-------++-------+-------+-------++-------+-------+-------"); // Print second separator
       }
     }
   }
