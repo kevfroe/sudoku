@@ -360,15 +360,16 @@ function Board () {
 
   //-----------------------------------------
   function print_internal () {
+    var row_separator = "-------+-------+-------++-------+-------+-------++-------+-------+-------";
     print_to_output ("Printing board (ver 2)");
 
     for (var i = 0; i < _row_indices.length; i++) {
       print_row (_row_indices[i]);
       if (i != _row_indices.length - 1) {
-        print_to_output ("-------+-------+-------++-------+-------+-------++-------+-------+-------"); // Print separator
+        print_to_output (row_separator); // Print separator
       }
       if ((i == 2) || (i == 5)) {
-        print_to_output ("-------+-------+-------++-------+-------+-------++-------+-------+-------"); // Print second separator
+        print_to_output (row_separator); // Print second separator
       }
     }
   }
