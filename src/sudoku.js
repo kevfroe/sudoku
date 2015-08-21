@@ -149,7 +149,7 @@ function Board () {
   //-----------------------------------------
   function solve_internal () {
     var updated = true;
-    var retry_count = 1;
+    var retry_count = 5;
     
     while (updated == true) {
       updated = false;
@@ -192,14 +192,8 @@ function Board () {
       if ((updated == false) && (retry_count != 0)) {
         updated = true;
         retry_count--;
-        print_to_output ("Loop failed to find an update. Retrying. Retry count is now " + retry_count);
       }
     }
-
-    //print_internal ();
-
-    //update_resolve_complete_subsets (_row_indices[7]);
-    //update_resolve_complete_subsets (_row_indices[0]);
 
     return;
   }
@@ -208,8 +202,6 @@ function Board () {
   function update_resolve_complete_subsets (indices) {
     var updated = false;
     var unsolved_numbers = [];
-
-    //print_to_output ("Entering update_find_complete_subsets");
 
     for (var i = 0; i < indices.length; i++) {
       var cell = _board[indices[i]];
@@ -220,11 +212,7 @@ function Board () {
       }
     }
 
-    //print_to_output ("Unsolved number are: " + unsolved_numbers);
-
     var unsolved_subsets = sets.getAllSubsets(unsolved_numbers.slice());
-
-    //print_to_output ("Unsolved subsets are: " + JSON.stringify(unsolved_subsets));
 
     for (var i = 0; i < unsolved_subsets.length; i++) {
       if ((unsolved_subsets[i].length < 2) ||
@@ -236,44 +224,30 @@ function Board () {
       if (!subset_possibilities_existance_count_matches(indices, unsolved_subsets[i])) {
         continue;
       }
-      //print_to_output ("Existance count matches!");
-
-      //print_internal ();
-
-      //print_to_output ("Indices: " + indices);
+      
       var indices_containing_subset = [];
       for (var j = 0; j < indices.length; j++) {
-        //print_to_output ("indices[" + j + "] possibilities: " + _board[indices[j]].possibilities);
-        //print_to_output ("unsolved_subsets[" + i + "]: " + unsolved_subsets[i]);
         if (sets.containsSet(_board[indices[j]].possibilities, unsolved_subsets[i])) {
           indices_containing_subset.push(indices[j]);
         }
       }
 
       if (indices_containing_subset.length == 0) {
-        //print_to_output ("!!! oh no no indices contained the subset");
         continue;
       }
 
-      //print_to_output ("Looking at set: " + unsolved_subsets[i])
-      //print_to_output ("Indices containing subset: " + indices_containing_subset);
-
       if (indices_containing_subset.length == unsolved_subsets[i].length) {
-        //print_to_output ("Length match! " + indices_containing_subset.length)
         for (var j = 0; j < indices.length; j++) {
           if (indices_containing_subset.indexOf(indices[j]) == -1) {
-            //print_to_output ("Removing possibilities: " + unsolved_subsets[i]);
             updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i]);
           }
           else {
-            //print_to_output ("Keeping only possibilities: " + unsolved_subsets[i]);
             updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i]);
           }
         }
       }
     }
 
-    //print_to_output ("Exiting update_find_complete_subsets");
     return updated;
   }
 
@@ -564,7 +538,28 @@ function Board () {
 // Script
 var board1 = new Board();
 
-board1.set(0,0,0,0,0,1,0,2,0,0,0,8,7,0,3,5,0,0,9,0,3,0,0,2,0,0,0,2,0,5,0,0,0,0,0,6,0,0,0,0,7,0,0,0,0,6,0,0,0,0,0,8,0,1,0,0,0,3,0,0,4,0,9,0,0,2,9,0,8,7,0,0,0,4,0,1,0,0,0,0,0)
+board1.set(0,0,0,0,0,1,0,2,0,
+           0,0,8,7,0,3,5,0,0,
+           9,0,3,0,0,2,0,0,0,
+           2,0,5,0,0,0,0,0,6,
+           0,0,0,0,7,0,0,0,0,
+           6,0,0,0,0,0,8,0,1,
+           0,0,0,3,0,0,4,0,9,
+           0,0,2,9,0,8,7,0,0,
+           0,4,0,1,0,0,0,0,0);
+board1.print();
+board1.solve();
+board1.print();
+
+board1.set(9,2,0,0,0,5,1,0,0,
+           0,0,0,0,4,0,0,0,0,
+           1,0,0,6,0,0,7,0,0,
+           0,6,0,0,8,0,0,0,0,
+           3,0,2,0,0,0,8,0,5,
+           0,0,0,0,9,0,0,4,0,
+           0,0,7,0,0,3,0,0,8,
+           0,0,0,0,5,0,0,0,0,
+           0,0,1,7,0,0,0,5,2);
 board1.print();
 board1.solve();
 board1.print();
