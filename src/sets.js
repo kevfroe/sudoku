@@ -1,10 +1,5 @@
-exports.getAllSubsets = function (list) {
-	return getAllSubsetsInternal(list);
-}
-
-exports.containsSet = function (container, elements) {
-	return containsSetInternal(container, elements);
-}
+exports.getAllSubsets = getAllSubsetsInternal;
+exports.containsSet   = containsSetInternal;
 
 function getAllSubsetsInternal (list) {
 	if (list.length == 0) {
