@@ -66,6 +66,11 @@ function Board () {
         }
       }
     }
+
+    this.resolve = function (value) {
+      this.value = value;
+      this.possibilities = [];
+    }
   }
   
   //-----------------------------------------
@@ -254,67 +259,58 @@ function Board () {
   //-----------------------------------------
   function update_resolve_box_line_subsets (indices1, indices2) {
     var updated = false;
-    
-    var intersect_indices = []
-    for (var i = 0; i < indices1.length; i++) {
-      for (var j = 0; j < indices2.length; j++) {
-        if (indices1[i] == indices2[j]) {
-          intersect_indices.push(indices1[i]);
-        }
-      }
-    }
-    
-    var indices1_not_subset = [];
-    var indices2_not_subset = [];
-    for (var i = 0; i < indices1.length; i++) {
-      if (-1 == intersect_indices.indexOf(indices1[i])) {
-        indices1_not_subset.push(indices1[i]);
-      }
-      if (-1 == intersect_indices.indexOf(indices2[i])) {
-        indices2_not_subset.push(indices2[i]);
-      }
-    }
-    
+
+    var indices_intersection = indices1.filter(function (n) {
+      return indices2.indexOf(n) != -1;
+    });
+
+    var indices1_difference = indices1.filter(function(n){
+      return indices_intersection.indexOf(n) == -1;
+    });
+    var indices2_difference = indices2.filter(function(n){
+      return indices_intersection.indexOf(n) == -1;
+    });
+
     var intersect_possibilities = [];
-    for (var i = 0; i < intersect_indices.length; i++) {
-      for (var j = 0; j < _board[intersect_indices[i]].possibilities.length; j++) {
-        var possibility = _board[intersect_indices[i]].possibilities[j];
+    for (var i = 0; i < indices_intersection.length; i++) {
+      for (var j = 0; j < _board[indices_intersection[i]].possibilities.length; j++) {
+        var possibility = _board[indices_intersection[i]].possibilities[j];
         if (-1 == intersect_possibilities.indexOf(possibility)) {
           intersect_possibilities.push(possibility);
         }
       }
     }
     
-    // check indices1_not_subset
+    // check indices1_difference
     for (var i = 0; i < intersect_possibilities.length; i++) {
       var unique_to_intersection = true;
-      for (var j = 0; j < indices1_not_subset.length; j++) {
-        if (-1 != _board[indices1_not_subset[j]].possibilities.indexOf(intersect_possibilities[i])) {
+      for (var j = 0; j < indices1_difference.length; j++) {
+        if (-1 != _board[indices1_difference[j]].possibilities.indexOf(intersect_possibilities[i])) {
           unique_to_intersection = false;
           break;
         }
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices1_not_subset.length; j++) {
-          updated = _board[indices1_not_subset[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices1_difference.length; j++) {
+          updated = _board[indices1_difference[j]].remove_possibility(intersect_possibilities[i]);
         }
       }
     }
     
-    // check indices2_not_subset
+    // check indices2_difference
     for (var i = 0; i < intersect_possibilities.length; i++) {
       var unique_to_intersection = true;
-      for (var j = 0; j < indices2_not_subset.length; j++) {
-        if (-1 != _board[indices2_not_subset[j]].possibilities.indexOf(intersect_possibilities[i])) {
+      for (var j = 0; j < indices2_difference.length; j++) {
+        if (-1 != _board[indices2_difference[j]].possibilities.indexOf(intersect_possibilities[i])) {
           unique_to_intersection = false;
           break;
         }
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices2_not_subset.length; j++) {
-          updated = _board[indices2_not_subset[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices2_difference.length; j++) {
+          updated = _board[indices2_difference[j]].remove_possibility(intersect_possibilities[i]);
         }
       }
     }
@@ -338,10 +334,8 @@ function Board () {
       var value = i+1;
       if (possible_cnts[i] == 1) {
         for (var j = 0; j < indices.length; j++) {
-          var has_possibility = (-1 != _board[indices[j]].possibilities.indexOf(value));
-          if (has_possibility) {
-            _board[indices[j]].value = value;
-            _board[indices[j]].possibilities = [];
+          if (_board[indices[j]].possibilities.indexOf(value) != -1) {
+            _board[indices[j]].resolve(value);
             break;
           }
         }
@@ -382,9 +376,7 @@ function Board () {
     
     for (var i = 0; i < _board.length; i++) {
       if (_board[i].possibilities.length == 1) {
-        //print_to_output("UPDATING> _board" + printable_index(i) + " has only one possibility, setting value to  " + _board[i].possibilities[0]);
-        _board[i].value = _board[i].possibilities[0];
-        _board[i].possibilities = [];
+        _board[i].resolve (_board[i].possibilities[0]);
         updated = true;
       }
     }
@@ -395,21 +387,19 @@ function Board () {
   function subset_possibilities_existance_count_matches (indices, subset) {
     var length = 0;
 
-
     for (var i = 0; i < subset.length; i++) {
       if (i == 0) {
-        length = get_indices_with_possibility(indices, subset[i]).length;
+        length = get_indices_containing_possibility(indices, subset[i]).length;
       }
-      else if (length != get_indices_with_possibility(indices, subset[i]).length) {
+      else if (length != get_indices_containing_possibility(indices, subset[i]).length) {
         return false; // lengths do not match
       }
     }
-    //print_to_output ("Checked indices [" + indices + "] for subset [" + subset + "] with successful result");
     return true; // counts match 
   }
 
   //-----------------------------------------
-  function get_indices_with_possibility (indices, value) {
+  function get_indices_containing_possibility (indices, value) {
     var indices_with_possibility = [];
     for (var i = 0; i < indices.length; i++) {
       if (_board[indices[i]].possibilities.indexOf(value) != -1) {
@@ -551,15 +541,16 @@ board1.print();
 board1.solve();
 board1.print();
 
-board1.set(9,2,0,0,0,5,1,0,0,
-           0,0,0,0,4,0,0,0,0,
-           1,0,0,6,0,0,7,0,0,
-           0,6,0,0,8,0,0,0,0,
-           3,0,2,0,0,0,8,0,5,
-           0,0,0,0,9,0,0,4,0,
-           0,0,7,0,0,3,0,0,8,
-           0,0,0,0,5,0,0,0,0,
-           0,0,1,7,0,0,0,5,2);
-board1.print();
-board1.solve();
-board1.print();
+//board1.set(9,2,0,0,0,5,1,0,0,
+//           0,0,0,0,4,0,0,0,0,
+//           1,0,0,6,0,0,7,0,0,
+//           0,6,0,0,8,0,0,0,0,
+//           3,0,2,0,0,0,8,0,5,
+//           0,0,0,0,9,0,0,4,0,
+//           0,0,7,0,0,3,0,0,8,
+//           0,0,0,0,5,0,0,0,0,
+//           0,0,1,7,0,0,0,5,2);
+//board1.print();
+//board1.solve();
+//board1.print();
+
