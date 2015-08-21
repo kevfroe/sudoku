@@ -16,6 +16,24 @@
 // board1.solve();
 // board1.print();
 
+var sets = require("./sets.js");
+
+Array.prototype.equals = function remove_possibilities(arr) {
+  var result = false;
+
+  if (this.length != arr.length) {
+    return false;
+  }
+
+  for (var i = 0; i < this.length; i++) {
+    if (this[i] != arr[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function Board () {
   //-----------------------------------------
   // Internal Classes
@@ -32,6 +50,21 @@ function Board () {
         updated = true;
       }
       return updated;
+    }
+
+    this.remove_possibilities = function (val_array) {
+      for (var i = 0; i < val_array.length; i++) {
+        this.remove_possibility (val_array[i]);
+      }
+    }
+
+    this.keep_only_possibilities = function (only_possibilities) {
+      var poss = this.possibilities.slice();
+      for (var i = 0; i < poss.length; i++) {
+        if (only_possibilities.indexOf(poss[i]) == -1) {
+          this.remove_possibility (poss[i]);
+        }
+      }
     }
   }
   
@@ -116,6 +149,7 @@ function Board () {
   //-----------------------------------------
   function solve_internal () {
     var updated = true;
+    var retry_count = 1;
     
     while (updated == true) {
       updated = false;
@@ -126,6 +160,7 @@ function Board () {
         
         updated |= update_subset(_row_indices[i]);
         updated |= update_resolve_only_possible_subset(_row_indices[i]);
+        updated |= update_resolve_complete_subsets(_row_indices[i]);
         
         for (var j = box_start; j < box_start + 3; j++) { // 3 boxes to check for each row
           update_resolve_box_line_subsets(_row_indices[i], _box_indices[j]);
@@ -138,6 +173,7 @@ function Board () {
         
         updated |= update_subset(_col_indices[i]);
         updated |= update_resolve_only_possible_subset(_col_indices[i]);
+        updated |= update_resolve_complete_subsets(_col_indices[i]);
         
         for (var j = box_start; j < box_start + 3; j++) { // 3 boxes to check for each column
           update_resolve_box_line_subsets(_col_indices[i], _box_indices[j]);
@@ -148,14 +184,99 @@ function Board () {
       for (var i = 0; i < _box_indices.length; i++) {
         updated |= update_subset(_box_indices[i]);
         updated |= update_resolve_only_possible_subset(_box_indices[i]);
+        updated |= update_resolve_complete_subsets(_box_indices[i]);
       }
       
       updated |= update_resolve_cells();
+
+      if ((updated == false) && (retry_count != 0)) {
+        updated = true;
+        retry_count--;
+        print_to_output ("Loop failed to find an update. Retrying. Retry count is now " + retry_count);
+      }
     }
+
+    //print_internal ();
+
+    //update_resolve_complete_subsets (_row_indices[7]);
+    //update_resolve_complete_subsets (_row_indices[0]);
 
     return;
   }
-  
+
+  //-----------------------------------------
+  function update_resolve_complete_subsets (indices) {
+    var updated = false;
+    var unsolved_numbers = [];
+
+    //print_to_output ("Entering update_find_complete_subsets");
+
+    for (var i = 0; i < indices.length; i++) {
+      var cell = _board[indices[i]];
+      for (var j = 0; j < cell.possibilities.length; j++) {
+        if (unsolved_numbers.indexOf(cell.possibilities[j]) == -1) {
+          unsolved_numbers.push(cell.possibilities[j]);
+        }
+      }
+    }
+
+    //print_to_output ("Unsolved number are: " + unsolved_numbers);
+
+    var unsolved_subsets = sets.getAllSubsets(unsolved_numbers.slice());
+
+    //print_to_output ("Unsolved subsets are: " + JSON.stringify(unsolved_subsets));
+
+    for (var i = 0; i < unsolved_subsets.length; i++) {
+      if ((unsolved_subsets[i].length < 2) ||
+          (unsolved_subsets[i].length >= unsolved_numbers.length))
+      {
+        continue;
+      }
+
+      if (!subset_possibilities_existance_count_matches(indices, unsolved_subsets[i])) {
+        continue;
+      }
+      //print_to_output ("Existance count matches!");
+
+      //print_internal ();
+
+      //print_to_output ("Indices: " + indices);
+      var indices_containing_subset = [];
+      for (var j = 0; j < indices.length; j++) {
+        //print_to_output ("indices[" + j + "] possibilities: " + _board[indices[j]].possibilities);
+        //print_to_output ("unsolved_subsets[" + i + "]: " + unsolved_subsets[i]);
+        if (sets.containsSet(_board[indices[j]].possibilities, unsolved_subsets[i])) {
+          indices_containing_subset.push(indices[j]);
+        }
+      }
+
+      if (indices_containing_subset.length == 0) {
+        //print_to_output ("!!! oh no no indices contained the subset");
+        continue;
+      }
+
+      //print_to_output ("Looking at set: " + unsolved_subsets[i])
+      //print_to_output ("Indices containing subset: " + indices_containing_subset);
+
+      if (indices_containing_subset.length == unsolved_subsets[i].length) {
+        //print_to_output ("Length match! " + indices_containing_subset.length)
+        for (var j = 0; j < indices.length; j++) {
+          if (indices_containing_subset.indexOf(indices[j]) == -1) {
+            //print_to_output ("Removing possibilities: " + unsolved_subsets[i]);
+            updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i]);
+          }
+          else {
+            //print_to_output ("Keeping only possibilities: " + unsolved_subsets[i]);
+            updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i]);
+          }
+        }
+      }
+    }
+
+    //print_to_output ("Exiting update_find_complete_subsets");
+    return updated;
+  }
+
   //-----------------------------------------
   function update_resolve_box_line_subsets (indices1, indices2) {
     var updated = false;
@@ -297,6 +418,34 @@ function Board () {
   }
 
   //-----------------------------------------
+  function subset_possibilities_existance_count_matches (indices, subset) {
+    var length = 0;
+
+
+    for (var i = 0; i < subset.length; i++) {
+      if (i == 0) {
+        length = get_indices_with_possibility(indices, subset[i]).length;
+      }
+      else if (length != get_indices_with_possibility(indices, subset[i]).length) {
+        return false; // lengths do not match
+      }
+    }
+    //print_to_output ("Checked indices [" + indices + "] for subset [" + subset + "] with successful result");
+    return true; // counts match 
+  }
+
+  //-----------------------------------------
+  function get_indices_with_possibility (indices, value) {
+    var indices_with_possibility = [];
+    for (var i = 0; i < indices.length; i++) {
+      if (_board[indices[i]].possibilities.indexOf(value) != -1) {
+        indices_with_possibility.push(indices[i]);
+      }
+    }
+    return indices_with_possibility;
+  }
+
+  //-----------------------------------------
   function print_row (indices) {
     var line123 = "";
     var line456 = "";
@@ -361,7 +510,13 @@ function Board () {
   //-----------------------------------------
   function print_internal () {
     var row_separator = "-------+-------+-------++-------+-------+-------++-------+-------+-------";
-    print_to_output ("Printing board (ver 2)");
+    print_to_output ("");
+    print_to_output ("");
+    print_to_output ("-------------------------------------------------------------------------");
+    print_to_output ("-------------------------------------------------------------------------");
+    print_to_output ("Printing board");
+    print_to_output ("-------------------------------------------------------------------------");
+    print_to_output ("-------------------------------------------------------------------------");
 
     for (var i = 0; i < _row_indices.length; i++) {
       print_row (_row_indices[i]);
