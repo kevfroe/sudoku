@@ -44,8 +44,15 @@ function Board () {
     
     this.remove_possibility = function (val) {
       var updated = false;
+
       var index = this.possibilities.indexOf(val);
       if (index != -1) {
+        if (this.possibilities.length == 1) {
+          print_internal ();
+          throw "Trying to return last possibility";
+          updated = updated;
+        }
+
         this.possibilities.splice(index, 1); // remove 1 value from the given index
         updated = true;
       }
@@ -174,13 +181,13 @@ function Board () {
       
       // update possibilities based on columns
       for (var i = 0; i < _col_indices.length; i++) {
-        var box_start = Math.floor(i/3) * 3; // Basically 0 for 0-2, 3 for 3-5, 6 for 6-9
+        var box_start = Math.floor(i/3); // Basically 0 for 0-2, 1 for 3-5, 2 for 6-9
         
         updated |= update_subset(_col_indices[i]);
         updated |= update_resolve_only_possible_subset(_col_indices[i]);
         updated |= update_resolve_complete_subsets(_col_indices[i]);
         
-        for (var j = box_start; j < box_start + 3; j++) { // 3 boxes to check for each column
+        for (var j = box_start; j < box_start + 7; j+=3) { // 3 boxes to check for each column [036][147][258]
           update_resolve_box_line_subsets(_col_indices[i], _box_indices[j]);
         }
       }
@@ -292,8 +299,8 @@ function Board () {
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices1_difference.length; j++) {
-          updated = _board[indices1_difference[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices2_difference.length; j++) {
+          updated = _board[indices2_difference[j]].remove_possibility(intersect_possibilities[i]);
         }
       }
     }
@@ -309,8 +316,8 @@ function Board () {
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices2_difference.length; j++) {
-          updated = _board[indices2_difference[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices1_difference.length; j++) {
+          updated = _board[indices1_difference[j]].remove_possibility(intersect_possibilities[i]);
         }
       }
     }
@@ -528,18 +535,31 @@ function Board () {
 // Script
 var board1 = new Board();
 
-board1.set(0,0,0,0,0,1,0,2,0,
-           0,0,8,7,0,3,5,0,0,
-           9,0,3,0,0,2,0,0,0,
-           2,0,5,0,0,0,0,0,6,
-           0,0,0,0,7,0,0,0,0,
-           6,0,0,0,0,0,8,0,1,
-           0,0,0,3,0,0,4,0,9,
-           0,0,2,9,0,8,7,0,0,
-           0,4,0,1,0,0,0,0,0);
+board1.set(7,0,2,0,0,1,4,0,0,
+           0,0,8,0,0,6,0,3,0,
+           0,1,0,0,0,0,0,0,9,
+           0,0,0,0,1,2,0,5,0,
+           0,2,0,0,0,0,0,7,0,
+           0,4,0,5,7,0,0,0,0,
+           3,0,0,0,0,0,0,2,0,
+           0,7,0,6,0,0,5,0,0,
+           0,0,5,3,0,0,6,0,8);
 board1.print();
 board1.solve();
 board1.print();
+
+//board1.set(0,0,0,0,0,1,0,2,0,
+//           0,0,8,7,0,3,5,0,0,
+//           9,0,3,0,0,2,0,0,0,
+//           2,0,5,0,0,0,0,0,6,
+//           0,0,0,0,7,0,0,0,0,
+//           6,0,0,0,0,0,8,0,1,
+//           0,0,0,3,0,0,4,0,9,
+//           0,0,2,9,0,8,7,0,0,
+//           0,4,0,1,0,0,0,0,0);
+//board1.print();
+//board1.solve();
+//board1.print();
 
 //board1.set(9,2,0,0,0,5,1,0,0,
 //           0,0,0,0,4,0,0,0,0,

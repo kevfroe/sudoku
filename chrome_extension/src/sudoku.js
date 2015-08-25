@@ -1,6 +1,6 @@
 // sudoku.js
 
-Array.prototype.equals = function remove_possibilities(arr) {
+Array.prototype.equals = function (arr) {
   var result = false;
 
   if (this.length != arr.length) {
@@ -20,38 +20,63 @@ function SudokuBoard () {
   //-----------------------------------------
   // Internal Classes
   //-----------------------------------------
-  function Cell () {
+  function Cell (row, col, box) {
+    this.row = row;
+    this.col = col;
+    this.box = box;
     this.value = 0;
     this.possibilities = [1,2,3,4,5,6,7,8,9];
     
-    this.remove_possibility = function (val) {
+    this.remove_possibility = function (val, reason) {
       var updated = false;
+
+      validateBoard();
+
       var index = this.possibilities.indexOf(val);
       if (index != -1) {
+        print_to_output ("Removing (" + this.row + ", " + this.col + ") value " + val + " - " + reason);
+        print_internal();
+        if (this.possibilities.length == 1) {
+          print_to_output ("Removing index " + getIndex(this.row, this.col) + " row " + this.row + " col " + this.col);
+          print_internal ();
+          //throw "Trying to return last possibility";
+          updated = updated;
+        }
+
         this.possibilities.splice(index, 1); // remove 1 value from the given index
         updated = true;
       }
       return updated;
     }
 
-    this.remove_possibilities = function (val_array) {
+    this.remove_possibilities = function (val_array, reason) {
       for (var i = 0; i < val_array.length; i++) {
-        this.remove_possibility (val_array[i]);
+        this.remove_possibility (val_array[i], reason);
       }
     }
 
-    this.keep_only_possibilities = function (only_possibilities) {
+    this.keep_only_possibilities = function (only_possibilities, reason) {
+      validateBoard();
       var poss = this.possibilities.slice();
       for (var i = 0; i < poss.length; i++) {
         if (only_possibilities.indexOf(poss[i]) == -1) {
-          this.remove_possibility (poss[i]);
+          this.remove_possibility (poss[i], reason);
         }
       }
     }
 
     this.resolve = function (value) {
+      validateBoard();
+      print_to_output ("Resolving (" + this.row + ", " + this.col + ") to " + value);
+      print_internal ();
       this.value = value;
       this.possibilities = [];
+
+      for (var i = 0; i < _row_indices[this.row].length; i++) {
+        _board[_row_indices[this.row][i]].remove_possibility(value);
+        _board[_col_indices[this.col][i]].remove_possibility(value);
+        _board[_box_indices[this.box][i]].remove_possibility(value);
+      }
     }
   }
   
@@ -95,23 +120,105 @@ function SudokuBoard () {
   ];
 
   var _board = [
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
-    new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(), new Cell(),
+    new Cell(0,0,0), new Cell(0,1,0), new Cell(0,2,0), new Cell(0,3,1), new Cell(0,4,1), new Cell(0,5,1), new Cell(0,6,2), new Cell(0,7,2), new Cell(0,8,2),
+    new Cell(1,0,0), new Cell(1,1,0), new Cell(1,2,0), new Cell(1,3,1), new Cell(1,4,1), new Cell(1,5,1), new Cell(1,6,2), new Cell(1,7,2), new Cell(1,8,2),
+    new Cell(2,0,0), new Cell(2,1,0), new Cell(2,2,0), new Cell(2,3,1), new Cell(2,4,1), new Cell(2,5,1), new Cell(2,6,2), new Cell(2,7,2), new Cell(2,8,2),
+    new Cell(3,0,3), new Cell(3,1,3), new Cell(3,2,3), new Cell(3,3,4), new Cell(3,4,4), new Cell(3,5,4), new Cell(3,6,5), new Cell(3,7,5), new Cell(3,8,5),
+    new Cell(4,0,3), new Cell(4,1,3), new Cell(4,2,3), new Cell(4,3,4), new Cell(4,4,4), new Cell(4,5,4), new Cell(4,6,5), new Cell(4,7,5), new Cell(4,8,5),
+    new Cell(5,0,3), new Cell(5,1,3), new Cell(5,2,3), new Cell(5,3,4), new Cell(5,4,4), new Cell(5,5,4), new Cell(5,6,5), new Cell(5,7,5), new Cell(5,8,5),
+    new Cell(6,0,6), new Cell(6,1,6), new Cell(6,2,6), new Cell(6,3,7), new Cell(6,4,7), new Cell(6,5,7), new Cell(6,6,8), new Cell(6,7,8), new Cell(6,8,8),
+    new Cell(7,0,6), new Cell(7,1,6), new Cell(7,2,6), new Cell(7,3,7), new Cell(7,4,7), new Cell(7,5,7), new Cell(7,6,8), new Cell(7,7,8), new Cell(7,8,8),
+    new Cell(8,0,6), new Cell(8,1,6), new Cell(8,2,6), new Cell(8,3,7), new Cell(8,4,7), new Cell(8,5,7), new Cell(8,6,8), new Cell(8,7,8), new Cell(8,8,8),
   ];
   
   //-----------------------------------------
   // Internal Functions
   //-----------------------------------------
+
+  function validateBoard() {
+    for (var i = 0; i < _row_indices.length; i++) {
+      var solved = getSolved(_row_indices[i]);
+      var possibilities = getPossibilities(_row_indices[i]);
+      if (solved.length + possibilities.length < 9) {
+        print_internal();
+        throw "Board is invalid - row[" + i + "] is missing something";
+      }
+    }
+    for (var i = 0; i < _col_indices.length; i++) {
+      var solved = getSolved(_col_indices[i]);
+      var possibilities = getPossibilities(_col_indices[i]);
+      if (solved.length + possibilities.length < 9) {
+        print_internal();
+        throw "Board is invalid - col[" + i + "] is missing something";
+      }
+    }
+    for (var i = 0; i < _box_indices.length; i++) {
+      var solved = getSolved(_box_indices[i]);
+      var possibilities = getPossibilities(_box_indices[i]);
+      if (solved.length + possibilities.length < 9) {
+        print_internal();
+        throw "Board is invalid - box[" + i + "] is missing something";
+      }
+    }
+  }
+
+  function getSolved(indices) {
+    var solved = []
+    for (var i = 0; i < indices.length; i++) {
+      if (_board[indices[i]].value != 0) {
+        solved.push(_board[indices[i]].value);
+      }
+    }
+    return solved;
+  }
+
+  function getPossibilities(indices) {
+    var possibilities = [];
+    for (var i = 0; i < indices.length; i++) {
+      if (_board[indices[i]].value == 0) {
+        for (var j = 0; j < _board[indices[i]].possibilities.length; j++) {
+          if (possibilities.indexOf(_board[indices[i]].possibilities[j]) == -1) {
+            possibilities.push(_board[indices[i]].possibilities[j]);
+          }
+        }
+      }
+    }
+    return possibilities;
+  }
+
+  function getIndex(row, col) { return (row * 9) + col; }
+  function getRow  (index)    { return Math.floor(index/9); }
+  function getCol  (index)    { return index % 9; }
+  function getBox  (index)    {
+    var row = getRow(index);
+    var col = getCol(index);
+    switch (row) {
+      case 0: case 1: case 2:{
+        if (col <= 2)     { return 0; }
+        else if (col >=6) { return 2; }
+        else              { return 1; }
+      }
+      break;
+      case 3: case 4: case 5:{
+        if (col <= 2)     { return 3; }
+        else if (col >=6) { return 5; }
+        else              { return 4; }
+      }
+      break;
+      case 6: case 7: case 8:{
+        if (col <= 2)     { return 6; }
+        else if (col >=6) { return 8; }
+        else              { return 7; }
+      }
+      break;
+      default:
+        throw "Unknown row in getBox";
+    }
+  }
+
   function set_internal (new_board) {
     for (var i = 0; i < new_board.length; i++) {
-      _board[i] = new Cell();
+      _board[i] = new Cell(getRow(i), getCol(i), getBox(i));
       _board[i].value = new_board[i];
       if (new_board[i] != 0) {
         _board[i].possibilities = [];
@@ -137,9 +244,17 @@ function SudokuBoard () {
   function solve_internal () {
     var updated = true;
     var retry_count = 5;
+
+    for (var i = 0; i < _row_indices.length; i++) {
+      update_subset(_row_indices[i]);
+      update_subset(_col_indices[i]);
+      update_subset(_box_indices[i]);
+    }
     
     while (updated == true) {
       updated = false;
+
+      validateBoard();
       
       // update possibilities based on rows
       for (var i = 0; i < _row_indices.length; i++) {
@@ -148,23 +263,31 @@ function SudokuBoard () {
         updated |= update_subset(_row_indices[i]);
         updated |= update_resolve_only_possible_subset(_row_indices[i]);
         updated |= update_resolve_complete_subsets(_row_indices[i]);
+
+        validateBoard();
         
         for (var j = box_start; j < box_start + 3; j++) { // 3 boxes to check for each row
           update_resolve_box_line_subsets(_row_indices[i], _box_indices[j]);
         }
+
+        validateBoard();
       }
       
       // update possibilities based on columns
       for (var i = 0; i < _col_indices.length; i++) {
-        var box_start = Math.floor(i/3) * 3; // Basically 0 for 0-2, 3 for 3-5, 6 for 6-9
+        var box_start = Math.floor(i/3); // Basically 0 for 0-2, 1 for 3-5, 2 for 6-9
         
         updated |= update_subset(_col_indices[i]);
         updated |= update_resolve_only_possible_subset(_col_indices[i]);
         updated |= update_resolve_complete_subsets(_col_indices[i]);
+
+        validateBoard();
         
-        for (var j = box_start; j < box_start + 3; j++) { // 3 boxes to check for each column
+        for (var j = box_start; j < box_start + 7; j+=3) { // 3 boxes to check for each column [036][147][258]
           update_resolve_box_line_subsets(_col_indices[i], _box_indices[j]);
         }
+
+        validateBoard();
       }
       
       // update possibilities based on boxes
@@ -172,9 +295,13 @@ function SudokuBoard () {
         updated |= update_subset(_box_indices[i]);
         updated |= update_resolve_only_possible_subset(_box_indices[i]);
         updated |= update_resolve_complete_subsets(_box_indices[i]);
+
+        validateBoard();
       }
       
       updated |= update_resolve_cells();
+
+      validateBoard();
 
       if ((updated == false) && (retry_count != 0)) {
         updated = true;
@@ -226,10 +353,10 @@ function SudokuBoard () {
       if (indices_containing_subset.length == unsolved_subsets[i].length) {
         for (var j = 0; j < indices.length; j++) {
           if (indices_containing_subset.indexOf(indices[j]) == -1) {
-            updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i]);
+            updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i], "complete subset remove");
           }
           else {
-            updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i]);
+            updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i], "complete subset keep");
           }
         }
       }
@@ -274,8 +401,8 @@ function SudokuBoard () {
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices1_difference.length; j++) {
-          updated = _board[indices1_difference[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices2_difference.length; j++) {
+          updated = _board[indices2_difference[j]].remove_possibility(intersect_possibilities[i], "unique to intersection");
         }
       }
     }
@@ -291,8 +418,8 @@ function SudokuBoard () {
       }
       
       if (unique_to_intersection) {
-        for (var j = 0; j < indices2_difference.length; j++) {
-          updated = _board[indices2_difference[j]].remove_possibility(intersect_possibilities[i]);
+        for (var j = 0; j < indices1_difference.length; j++) {
+          updated = _board[indices1_difference[j]].remove_possibility(intersect_possibilities[i], "unique to intersection");
         }
       }
     }
@@ -344,7 +471,7 @@ function SudokuBoard () {
       for (var j = 0; j < indices.length; j++) {
         var cell = _board[indices[j]];
         if (cell.value == 0) {
-          updated = cell.remove_possibility(solved_list[i])
+          updated = cell.remove_possibility(solved_list[i], "removing solved values")
         }
       }
     }
