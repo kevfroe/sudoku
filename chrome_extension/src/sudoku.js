@@ -663,4 +663,7 @@ function SudokuBoard () {
   this.print    = function () { return print_internal();   }
 };
 
+if (typeof exports == "undefined") {
+  exports = {};
+}
 exports.SudokuBoard = SudokuBoard;
