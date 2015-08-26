@@ -34,11 +34,11 @@ function SudokuBoard () {
 
       var index = this.possibilities.indexOf(val);
       if (index != -1) {
-        print_to_output ("Removing (" + this.row + ", " + this.col + ") value " + val + " - " + reason);
-        print_internal();
+        //print_to_output ("Removing (" + this.row + ", " + this.col + ") value " + val + " - " + reason);
+        //print_internal();
         if (this.possibilities.length == 1) {
-          print_to_output ("Removing index " + getIndex(this.row, this.col) + " row " + this.row + " col " + this.col);
-          print_internal ();
+          //print_to_output ("Removing index " + getIndex(this.row, this.col) + " row " + this.row + " col " + this.col);
+          //print_internal ();
           //throw "Trying to return last possibility";
           updated = updated;
         }
@@ -67,8 +67,8 @@ function SudokuBoard () {
 
     this.resolve = function (value) {
       validateBoard();
-      print_to_output ("Resolving (" + this.row + ", " + this.col + ") to " + value);
-      print_internal ();
+      //print_to_output ("Resolving (" + this.row + ", " + this.col + ") to " + value);
+      //print_internal ();
       this.value = value;
       this.possibilities = [];
 
@@ -136,11 +136,12 @@ function SudokuBoard () {
   //-----------------------------------------
 
   function validateBoard() {
+    return; 
     for (var i = 0; i < _row_indices.length; i++) {
       var solved = getSolved(_row_indices[i]);
       var possibilities = getPossibilities(_row_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        print_internal();
+        //print_internal();
         throw "Board is invalid - row[" + i + "] is missing something";
       }
     }
@@ -148,7 +149,7 @@ function SudokuBoard () {
       var solved = getSolved(_col_indices[i]);
       var possibilities = getPossibilities(_col_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        print_internal();
+        //print_internal();
         throw "Board is invalid - col[" + i + "] is missing something";
       }
     }
@@ -156,7 +157,7 @@ function SudokuBoard () {
       var solved = getSolved(_box_indices[i]);
       var possibilities = getPossibilities(_box_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        print_internal();
+        //print_internal();
         throw "Board is invalid - box[" + i + "] is missing something";
       }
     }
