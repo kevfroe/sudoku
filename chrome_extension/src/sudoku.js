@@ -1,5 +1,40 @@
 // sudoku.js
 
+var sets = {};
+sets.getAllSubsets = getAllSubsetsInternal;
+sets.containsSet   = containsSetInternal;
+
+function getAllSubsetsInternal (list) {
+  if (list.length == 0) {
+    return [[]];
+  }
+  else {
+    var last_val = list.pop();
+    var subsets = getAllSubsetsInternal(list);
+    var ret_list = [];
+
+    for (var i = 0; i < subsets.length; i++) {
+      var set_base = subsets[i].slice();
+      var set_plus = subsets[i].slice();
+      set_plus.push(last_val);
+
+      ret_list.push(set_base);
+      ret_list.push(set_plus);
+    }
+
+    return ret_list;
+  }
+}
+
+function containsSetInternal(container, elements) {
+  for (var i = 0; i < elements.length; i++) {
+    if (container.indexOf(elements[i]) != -1) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Array.prototype.equals = function (arr) {
   var result = false;
 
@@ -231,12 +266,7 @@ function SudokuBoard () {
   function get_internal () {
     var print_board = [];
     for (var i = 0; i < _board.length; i++) {
-      //if (_board[i].value != 0) {
-        print_board.push(_board[i].value);
-      //}
-      //else {
-      //  //print_board.push(_board[i].possibilities);
-      //}
+      print_board.push(_board[i].value);
     }
     return print_board;
   }
@@ -602,6 +632,15 @@ function SudokuBoard () {
       }
     }
   }
+
+  function isSolvedInternal () {
+    for (var i = 0; i < _board.length; i++) {
+      if (_board[i].value == 0) {
+        return false;
+      }
+    }
+    return true;
+  }
   
   //-----------------------------------------
   // Public Functions
@@ -617,20 +656,11 @@ function SudokuBoard () {
       throw "set_board called with unusable arguments";
     }
   }
-  
-  //-----------------------------------------
-  this.get = function () {
-    return get_internal();
-  }
-  
-  //-----------------------------------------
-  this.solve = function () {
-    return solve_internal();
-  }
 
-  //-----------------------------------------
-  this.print = function () {
-    return print_internal();
-  }
+  this.isSolved = function () { return isSolvedInternal(); }
+  this.get      = function () { return get_internal();     }
+  this.solve    = function () { return solve_internal();   }
+  this.print    = function () { return print_internal();   }
 };
 
+exports.SudokuBoard = SudokuBoard;
