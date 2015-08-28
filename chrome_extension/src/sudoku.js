@@ -1,5 +1,27 @@
 // sudoku.js
 
+if (typeof exports != "undefined") {
+  var trace_file = "trace_log.txt";
+  fs = require("fs");
+  fs.unlink(trace_file, function (err) {
+    if (err) throw err;
+  });
+}
+
+function trace (text) {
+  return;
+  var date_obj = new Date()
+  var date = date_obj.toJSON().split("T")[0];
+  var time = date_obj.toJSON().split("T")[1].split("Z");
+  var trace_str = date + "  " + time + "    " + text + "\n";
+
+  if (typeof fs != "undefined") {
+    fs.appendFile(trace_file, trace_str, function (err) {
+      if (err) throw err;
+    });
+  }
+}
+
 var sets = {};
 sets.getAllSubsets   = getAllSubsetsInternal;
 sets.containsOne     = containsOneInternal;
@@ -37,14 +59,18 @@ function containsOneInternal(container, elements) {
 }
 
 function containsAllOnlyInternal (container, elements) {
-  if (container.length != elements.length) {
+  trace("containsAllOnlyInternal - container " + container + " - elements " + elements);
+  if (container.length == 0) {
+    trace("container has length of 0");
     return false;
   }
-  for (var i = 0; i < elements.length; i++) {
-    if (container.indexOf(elements[i]) == -1) {
+  for (var i = 0; i < container.length; i++) {
+    if (elements.indexOf(container[i]) == -1) {
+      trace("Container[" + i + "] with value " + container[i] + " is not in elements");
       return false;
     }
   }
+  trace("Container " + container + " contains only elements from elements " + elements);
   return true;
 }
 
@@ -82,12 +108,9 @@ function SudokuBoard () {
 
       var index = this.possibilities.indexOf(val);
       if (index != -1) {
-        //print_to_output ("Removing (" + this.row + ", " + this.col + ") value " + val + " - " + reason);
-        //print_internal();
+        trace ("Removing (" + this.row + ", " + this.col + ") value " + val + " - " + reason);
         if (this.possibilities.length == 1) {
-          //print_to_output ("Removing index " + getIndex(this.row, this.col) + " row " + this.row + " col " + this.col);
-          //print_internal ();
-          //throw "Trying to return last possibility";
+          trace ("Removing index " + getIndex(this.row, this.col) + " row " + this.row + " col " + this.col);
           updated = updated;
         }
 
@@ -115,7 +138,7 @@ function SudokuBoard () {
 
     this.resolve = function (value) {
       validateBoard();
-      //print_to_output ("Resolving (" + this.row + ", " + this.col + ") to " + value);
+      trace ("Resolving (" + this.row + ", " + this.col + ") to " + value);
       //print_internal ();
       this.value = value;
       this.possibilities = [];
@@ -184,12 +207,12 @@ function SudokuBoard () {
   //-----------------------------------------
 
   function validateBoard() {
-    return; 
+    //return; 
     for (var i = 0; i < _row_indices.length; i++) {
       var solved = getSolved(_row_indices[i]);
       var possibilities = getPossibilities(_row_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        //print_internal();
+        print_internal();
         throw "Board is invalid - row[" + i + "] is missing something";
       }
     }
@@ -197,7 +220,7 @@ function SudokuBoard () {
       var solved = getSolved(_col_indices[i]);
       var possibilities = getPossibilities(_col_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        //print_internal();
+        print_internal();
         throw "Board is invalid - col[" + i + "] is missing something";
       }
     }
@@ -205,7 +228,7 @@ function SudokuBoard () {
       var solved = getSolved(_box_indices[i]);
       var possibilities = getPossibilities(_box_indices[i]);
       if (solved.length + possibilities.length < 9) {
-        //print_internal();
+        print_internal();
         throw "Board is invalid - box[" + i + "] is missing something";
       }
     }
@@ -350,6 +373,7 @@ function SudokuBoard () {
       if ((updated == false) && (retry_count != 0)) {
         updated = true;
         retry_count--;
+        trace ("Retry count now " + retry_count);
       }
     }
 
@@ -370,9 +394,9 @@ function SudokuBoard () {
       }
     }
 
-    //print_to_output ("Start");
-    //print_to_output ("Testing indices:  " + indices);
-    //print_to_output ("unsolved numbers: " + unsolved_numbers);
+    trace ("Start");
+    trace ("Testing indices:  " + indices);
+    trace ("unsolved numbers: " + unsolved_numbers);
 
     var unsolved_subsets = sets.getAllSubsets(unsolved_numbers.slice());
 
@@ -380,14 +404,16 @@ function SudokuBoard () {
       if ((unsolved_subsets[i].length < 2) ||
           (unsolved_subsets[i].length >= unsolved_numbers.length))
       {
+        trace ("Subset to small or too big");
         continue;
       }
 
       updated |= resolve_complete_subset_containing_all_only (unsolved_subsets[i], indices);
 
-      //print_to_output ("Testing subset: " + unsolved_subsets[i]);
+      trace ("Testing subset: " + unsolved_subsets[i]);
 
       if (!subset_possibilities_existance_count_matches(indices, unsolved_subsets[i])) {
+        trace ("existance count doesnt match");
         continue;
       }
       
@@ -402,16 +428,16 @@ function SudokuBoard () {
         continue;
       }
 
-      //print_to_output ("indices containing subset: " + indices_containing_subset);
+      trace ("indices containing subset: " + indices_containing_subset);
 
       if (indices_containing_subset.length == unsolved_subsets[i].length) {
         for (var j = 0; j < indices.length; j++) {
           if (indices_containing_subset.indexOf(indices[j]) == -1) {
-            //print_to_output ("Removing possibilities");
+            trace ("Removing possibilities");
             updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i], "complete subset remove");
           }
           else {
-            //print_to_output ("Keep only possibilities");
+            trace ("Keep only possibilities");
             updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i], "complete subset keep");
           }
         }
@@ -425,6 +451,8 @@ function SudokuBoard () {
     var updated = false;
     var indices_containing_all_only_subset = [];
 
+    trace ("Starting containing all only");
+
     for (var i = 0; i < indices.length; i++) {
       if (sets.containsAllOnly(_board[indices[i]].possibilities, unsolved_subset)) {
         indices_containing_all_only_subset.push(indices[i]);
@@ -432,18 +460,18 @@ function SudokuBoard () {
     }
 
     if (indices_containing_all_only_subset.length == 0) {
-      //print_to_output ("no indices contain all only");
+      trace ("no indices contain all only");
       return updated;
     }
 
     if (indices_containing_all_only_subset.length != unsolved_subset.length) {
-      //print_to_output ("indices containing all only length != unsolved_subset.length")
+      trace ("indices containing all only length != unsolved_subset.length")
       return updated;
     }
 
     for (var i = 0; i < indices.length; i++) {
       if (indices_containing_all_only_subset.indexOf(indices[i]) == -1) {
-        //print_to_output ("Removing possibilities");
+        trace ("Removing possibilities");
         updated |= _board[indices[i]].remove_possibilities(unsolved_subset, "complete subset remove");
       }
     }
@@ -584,6 +612,7 @@ function SudokuBoard () {
     for (var i = 0; i < subset.length; i++) {
       if (i == 0) {
         length = get_indices_containing_possibility(indices, subset[i]).length;
+        trace("First length is " + length);
       }
       else if (length != get_indices_containing_possibility(indices, subset[i]).length) {
         return false; // lengths do not match
@@ -600,6 +629,8 @@ function SudokuBoard () {
         indices_with_possibility.push(indices[i]);
       }
     }
+    trace ("indices_with_possibility is " + indices_with_possibility);
+    trace ("length is " + indices_with_possibility.length);
     return indices_with_possibility;
   }
 
@@ -697,7 +728,7 @@ function SudokuBoard () {
   }
 
   function tryAgainInternal () {
-    update_resolve_complete_subsets(_box_indices[7]);
+    update_resolve_complete_subsets(_col_indices[7]);
   }
   
   //-----------------------------------------
