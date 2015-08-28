@@ -3,9 +3,9 @@
 if (typeof exports != "undefined") {
   var trace_file = "trace_log.txt";
   fs = require("fs");
-  fs.unlink(trace_file, function (err) {
-    if (err) throw err;
-  });
+  //fs.unlink(trace_file, function (err) {
+  //  if (err) throw err;
+  //});
 }
 
 function trace (text) {
