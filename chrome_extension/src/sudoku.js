@@ -1,8 +1,9 @@
 // sudoku.js
 
 var sets = {};
-sets.getAllSubsets = getAllSubsetsInternal;
-sets.containsSet   = containsSetInternal;
+sets.getAllSubsets   = getAllSubsetsInternal;
+sets.containsOne     = containsOneInternal;
+sets.containsAllOnly = containsAllOnlyInternal;
 
 function getAllSubsetsInternal (list) {
   if (list.length == 0) {
@@ -26,13 +27,25 @@ function getAllSubsetsInternal (list) {
   }
 }
 
-function containsSetInternal(container, elements) {
+function containsOneInternal(container, elements) {
   for (var i = 0; i < elements.length; i++) {
     if (container.indexOf(elements[i]) != -1) {
       return true;
     }
   }
   return false;
+}
+
+function containsAllOnlyInternal (container, elements) {
+  if (container.length != elements.length) {
+    return false;
+  }
+  for (var i = 0; i < elements.length; i++) {
+    if (container.indexOf(elements[i]) == -1) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Array.prototype.equals = function (arr) {
@@ -357,6 +370,10 @@ function SudokuBoard () {
       }
     }
 
+    //print_to_output ("Start");
+    //print_to_output ("Testing indices:  " + indices);
+    //print_to_output ("unsolved numbers: " + unsolved_numbers);
+
     var unsolved_subsets = sets.getAllSubsets(unsolved_numbers.slice());
 
     for (var i = 0; i < unsolved_subsets.length; i++) {
@@ -366,13 +383,17 @@ function SudokuBoard () {
         continue;
       }
 
+      updated |= resolve_complete_subset_containing_all_only (unsolved_subsets[i], indices);
+
+      //print_to_output ("Testing subset: " + unsolved_subsets[i]);
+
       if (!subset_possibilities_existance_count_matches(indices, unsolved_subsets[i])) {
         continue;
       }
       
       var indices_containing_subset = [];
       for (var j = 0; j < indices.length; j++) {
-        if (sets.containsSet(_board[indices[j]].possibilities, unsolved_subsets[i])) {
+        if (sets.containsOne(_board[indices[j]].possibilities, unsolved_subsets[i])) {
           indices_containing_subset.push(indices[j]);
         }
       }
@@ -381,18 +402,51 @@ function SudokuBoard () {
         continue;
       }
 
+      //print_to_output ("indices containing subset: " + indices_containing_subset);
+
       if (indices_containing_subset.length == unsolved_subsets[i].length) {
         for (var j = 0; j < indices.length; j++) {
           if (indices_containing_subset.indexOf(indices[j]) == -1) {
+            //print_to_output ("Removing possibilities");
             updated |= _board[indices[j]].remove_possibilities(unsolved_subsets[i], "complete subset remove");
           }
           else {
+            //print_to_output ("Keep only possibilities");
             updated |= _board[indices[j]].keep_only_possibilities(unsolved_subsets[i], "complete subset keep");
           }
         }
       }
     }
 
+    return updated;
+  }
+
+  function resolve_complete_subset_containing_all_only (unsolved_subset, indices) {
+    var updated = false;
+    var indices_containing_all_only_subset = [];
+
+    for (var i = 0; i < indices.length; i++) {
+      if (sets.containsAllOnly(_board[indices[i]].possibilities, unsolved_subset)) {
+        indices_containing_all_only_subset.push(indices[i]);
+      }
+    }
+
+    if (indices_containing_all_only_subset.length == 0) {
+      //print_to_output ("no indices contain all only");
+      return updated;
+    }
+
+    if (indices_containing_all_only_subset.length != unsolved_subset.length) {
+      //print_to_output ("indices containing all only length != unsolved_subset.length")
+      return updated;
+    }
+
+    for (var i = 0; i < indices.length; i++) {
+      if (indices_containing_all_only_subset.indexOf(indices[i]) == -1) {
+        //print_to_output ("Removing possibilities");
+        updated |= _board[indices[i]].remove_possibilities(unsolved_subset, "complete subset remove");
+      }
+    }
     return updated;
   }
 
@@ -641,6 +695,10 @@ function SudokuBoard () {
     }
     return true;
   }
+
+  function tryAgainInternal () {
+    update_resolve_complete_subsets(_box_indices[7]);
+  }
   
   //-----------------------------------------
   // Public Functions
@@ -661,6 +719,8 @@ function SudokuBoard () {
   this.get      = function () { return get_internal();     }
   this.solve    = function () { return solve_internal();   }
   this.print    = function () { return print_internal();   }
+
+  this.tryAgain = function () { return tryAgainInternal(); }
 };
 
 if (typeof exports == "undefined") {
